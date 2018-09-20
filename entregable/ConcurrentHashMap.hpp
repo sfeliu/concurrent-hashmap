@@ -27,7 +27,9 @@ class ConcurrentHashMap {
         friend Test;
 
     private:
-        // Completar
+        Lista<pair<string, int>> _hash_table[26];
+        pthread_mutex_t _ocupados[26];
+
 
 };
 

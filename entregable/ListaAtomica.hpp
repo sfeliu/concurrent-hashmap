@@ -29,7 +29,10 @@ public:
     }
 
     void push_front(const T &val) {
-        // Completar. Debe ser atómico.
+        Nodo *viejo = _head.load();
+        Nodo *nuevo(val);
+        nuevo->_next = viejo;
+        _head.store(nuevo);
     }
 
     T &front() const {

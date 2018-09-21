@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#define TABLE_SIZE 26
+
 class ConcurrentHashMap {
     public:
         ConcurrentHashMap();
@@ -27,8 +29,13 @@ class ConcurrentHashMap {
         friend Test;
 
     private:
-        Lista<pair<string, int>> _hash_table[26];
-        pthread_mutex_t _ocupados[26];
+        Lista<pair<string, unsigned int>> _hash_table[TABLE_SIZE];
+
+        pthread_mutex_t _ocupados[TABLE_SIZE];
+
+        pair<string,unsigned int> getMaximumInCell(unsigned int position);
+
+        void *threadFindMax(void *arg);
 
 
 };

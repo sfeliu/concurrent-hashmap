@@ -30,7 +30,7 @@ public:
 
     void push_front(const T &val) {
         Nodo *viejo = _head.load();
-        Nodo *nuevo(val);
+        Nodo *nuevo = new Nodo(val);
         nuevo->_next = viejo;
         _head.store(nuevo);
     }

@@ -43,10 +43,11 @@ void ConcurrentHashMap::addAndInc(string key) {
         if(it.Siguiente().first == key){
             found = true;
             it.Siguiente().second+=1;
+            break;
         }
     }
     if(!found){
-        _hash_table->push_front(make_pair(key, 1));
+        _hash_table[position].push_front(make_pair(key, 1));
     }
     // La desbloqueo para que otro trabaje con ella.
     pthread_mutex_unlock(&_ocupados[position]);
@@ -59,6 +60,7 @@ list<string> ConcurrentHashMap::keys() {
         it = _hash_table[position].CrearIt();
         while(it.HaySiguiente()){
             partial_keys.push_back(it.Siguiente().first);
+            it.Avanzar();
         }
     }
     return partial_keys;

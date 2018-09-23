@@ -27,8 +27,8 @@ unsigned int getHashKey(string key){
 ConcurrentHashMap::ConcurrentHashMap() {
     for(int i=0; i<TABLE_SIZE; i++){
         // Creo que no es necesario, estoy oxidado con c++ classes
-        // Lista<pair<string,int>> lista_temporal;
-        // _hash_table[i] = lista_temporal;
+         Lista<pair<string,unsigned int>> *lista_temporal = new Lista<pair<string,unsigned int>>;
+         tabla[i] = lista_temporal;
         pthread_mutex_init(&_ocupados[i], nullptr);
     }
 }
@@ -37,17 +37,19 @@ void ConcurrentHashMap::addAndInc(string key) {
     unsigned int position = getHashKey(key);
     // Bloqueo la posicion de la tabla de hash para poder trabajar concurrentemente.
     pthread_mutex_lock(&_ocupados[position]);
-    Lista<pair<string, unsigned int>>::Iterador it = _hash_table[position].CrearIt();
+    Lista<pair<string, unsigned int>>::Iterador it = tabla[position]->CrearIt();
     bool found = false;
     while(it.HaySiguiente()){
         if(it.Siguiente().first == key){
             found = true;
             it.Siguiente().second+=1;
             break;
+        }else{
+            it.Avanzar();
         }
     }
     if(!found){
-        _hash_table[position].push_front(make_pair(key, 1));
+        tabla[position]->push_front(make_pair(key, 1));
     }
     // La desbloqueo para que otro trabaje con ella.
     pthread_mutex_unlock(&_ocupados[position]);
@@ -57,7 +59,7 @@ list<string> ConcurrentHashMap::keys() {
     list<string> partial_keys;
     Lista<pair<string, unsigned int>>::Iterador it;
     for(int position=0; position<TABLE_SIZE; position++){
-        it = _hash_table[position].CrearIt();
+        it = tabla[position]->CrearIt();
         while(it.HaySiguiente()){
             partial_keys.push_back(it.Siguiente().first);
             it.Avanzar();
@@ -69,7 +71,7 @@ list<string> ConcurrentHashMap::keys() {
 unsigned int ConcurrentHashMap::value(string key) {
     unsigned int value = 0;
     unsigned int position = getHashKey(key);
-    Lista<pair<string, unsigned int>>::Iterador it = _hash_table[position].CrearIt();
+    Lista<pair<string, unsigned int>>::Iterador it = tabla[position]->CrearIt();
     while(it.HaySiguiente()){
         if(it.Siguiente().first == key){
             value = it.Siguiente().second;
@@ -90,7 +92,7 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for(tid=0; tid<n; tid++){
-        pthread_create(&thread[tid], &attr, threadFindMax, &share_data);
+    //    pthread_create(&thread[tid], &attr, threadFindMax, &share_data);
     }
 
     pthread_attr_destroy(&attr);
@@ -113,7 +115,7 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
 
 pair<string, unsigned int> ConcurrentHashMap::getMaximumInCell(unsigned int position) {
     pair<string, unsigned int> max_pair = make_pair("",0);
-    Lista<pair<string, unsigned int>>::Iterador it = _hash_table[position].CrearIt();
+    Lista<pair<string, unsigned int>>::Iterador it = tabla[position]->CrearIt();
     while(it.HaySiguiente()){
         if(it.Siguiente().second > max_pair.second){
             max_pair = it.Siguiente();
@@ -148,23 +150,26 @@ void *ConcurrentHashMap::threadFindMax(void *arg) {
 
 static ConcurrentHashMap countWordsInFile(string filePath) {
     // Completar
-    ConcurrentHashMap c();
-    int i = 0;
-    string key = "";
-
-    for (std::string::iterator it=filePath.begin(); it!=filePath.end(); ++it) {
-        if (int(*it) - 97 < 0 or int(*it) - 97 > 25) {
-            if (key != "") {
-                c.addAndInc(key);
-                key = "";
+    static ConcurrentHashMap map;
+    string line, word;
+    unsigned long lastSpace, nextSpace;
+    ifstream file("/home/santiago/Documents/sistemas_operativos/tp1/TP1-pthreads/entregable/corpus");
+    if(file.is_open()) {
+        while (getline(file, line)) {
+            lastSpace = 0;
+            nextSpace = line.find(' ');
+            while (nextSpace != string::npos) {
+                word = line.substr(lastSpace, nextSpace - lastSpace);
+                map.addAndInc(word);
+                lastSpace = nextSpace;
+                nextSpace = line.find(' ');
             }
-            it++;
-        } else {
-            key += *it;
+            word = line.substr(lastSpace, nextSpace - lastSpace);
+            map.addAndInc(word);
         }
     }
-
-    return c;
+    file.close();
+    return map;
 }
 
 static ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths) {

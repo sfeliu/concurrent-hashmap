@@ -29,7 +29,7 @@ class ConcurrentHashMap {
         friend Test;
 
     private:
-        Lista<pair<string, unsigned int>> _hash_table[TABLE_SIZE];
+        Lista<pair<string, unsigned int>> *tabla[TABLE_SIZE];
 
         pthread_mutex_t _ocupados[TABLE_SIZE];
 

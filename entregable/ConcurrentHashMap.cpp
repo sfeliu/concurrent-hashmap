@@ -148,6 +148,23 @@ void *ConcurrentHashMap::threadFindMax(void *arg) {
 
 static ConcurrentHashMap countWordsInFile(string filePath) {
     // Completar
+    ConcurrentHashMap c();
+    int i = 0;
+    string key = "";
+
+    for (std::string::iterator it=filePath.begin(); it!=filePath.end(); ++it) {
+        if (int(*it) - 97 < 0 or int(*it) - 97 > 25) {
+            if (key != "") {
+                c.addAndInc(key);
+                key = "";
+            }
+            it++;
+        } else {
+            key += *it;
+        }
+    }
+
+    return c;
 }
 
 static ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths) {

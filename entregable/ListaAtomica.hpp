@@ -29,10 +29,14 @@ public:
     }
 
     void push_front(const T &val) {
-        Nodo *viejo = _head.load();
         Nodo *nuevo = new Nodo(val);
-        nuevo->_next = viejo;
-        _head.store(nuevo);
+        nuevo->_next = _head.load();
+        // Espero a que _head y nuevo->next sean iguales, es decir, que ningun
+        // thread me meta en el medio y cambie l a_head de la lista
+        while (!atomic_compare_exchange_weak(&_head, nuevo->next, nuevo)) {}
+        // aca nuevo->next apunta a (lo que era) _head y por lo tanto no me perdi ningun
+        // nodo
+        // Consultar diferencia entre _weak y _strong.
     }
 
     T &front() const {

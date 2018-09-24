@@ -18,7 +18,7 @@ $(BIN): ListaAtomica.hpp
 
 test-1: $(OBJ) test-1.cpp test.hpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test.hpp test-1.cpp $(LDLIBS)
-	
+
 test-1-run: test-1
 	awk -f corpus.awk corpus | sort >corpus-post
 	./test-1 | sort | diff -u - corpus-post

@@ -8,7 +8,9 @@
 #include <fstream>
 #include <list>
 #include <string>
+#include <sstream>
 #include <pthread.h>
+#include <vector>
 #include "ConcurrentHashMap.hpp"
 
 using namespace std;
@@ -252,8 +254,60 @@ static ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths) {
 
 }
 
+struct thread_argument_c {
+    atomic<int> &file_queue_index;
+    vector<string> &file_queue;
+    ConcurrentHashMap &hm;
+};
+
+//        #include <pthread.h>
+//
+//       int pthread_create(pthread_t *restrict thread,
+//              const pthread_attr_t *restrict attr,
+//              void *(*start_routine)(void*), void *restrict arg);
+
+vector<string> split_line(string &line, char delim) {
+    stringstream line_stream(line);
+    vector<string> words;
+    string word;
+    while(getline(line_stream, word, delim)) {
+        words.push_back(word);
+    }
+    return words;
+}
+
+void* count_file(void* args) {
+    thread_argument_c *targs = (thread_argument_c *) args;
+
+    while (true) {
+        int index = targs->file_queue_index.fetch_add(1);
+        if (index >= targs->file_queue.size())
+            break;
+            
+        ifstream file(targs->file_queue[index]);
+        string line;
+        if (file.is_open()) {
+            while (getline(file, line)) {
+                vector<string> words = split_line(line, ' ');
+                for (auto &word: words) {
+                    targs->hm.addAndInc(word);
+                }
+            }
+        }
+        file.close();
+    }
+}
+
 static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {
-    // Completar
+    atomic<int> file_queue_index(0);
+    vector<string> file_queue{begin(filePaths), end(filePaths)};
+    ConcurrentHashMap hm;
+
+    thread_argument_c targs = {file_queue_index, file_queue, hm};
+    pthread_t threads[n];
+    for (unsigned int i = 0; i < n; i++) {
+        pthread_create(&threads[i], nullptr, count_file, &targs);
+    }
 }
 
 static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {

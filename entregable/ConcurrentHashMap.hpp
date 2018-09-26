@@ -18,6 +18,8 @@ class ConcurrentHashMap {
     public:
         ConcurrentHashMap();
 
+        ~ConcurrentHashMap();
+
         void addAndInc(string key);
 
         list<string> keys();

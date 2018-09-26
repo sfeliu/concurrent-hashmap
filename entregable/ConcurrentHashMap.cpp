@@ -18,6 +18,7 @@ struct share_data_t {
     pair<string, unsigned int> maxPerCell[TABLE_SIZE];
 };
 
+
 unsigned int getHashKey(string key){
     unsigned int code = (unsigned int)key[0];
     return code - 97;               // the characters a-z begin in 97
@@ -26,10 +27,17 @@ unsigned int getHashKey(string key){
 
 ConcurrentHashMap::ConcurrentHashMap() {
     for(int i=0; i<TABLE_SIZE; i++){
-        // Creo que no es necesario, estoy oxidado con c++ classes
-         Lista<pair<string,unsigned int>> *lista_temporal = new Lista<pair<string,unsigned int>>;
-         tabla[i] = lista_temporal;
+        auto lista_temporal = new Lista<pair<string,unsigned int>>;
+        tabla[i] = lista_temporal;
         pthread_mutex_init(&_ocupados[i], nullptr);
+    }
+}
+
+// No estaria borrando completamente
+ConcurrentHashMap::~ConcurrentHashMap() {
+    for(int i=0; i<TABLE_SIZE; i++){
+        delete tabla[i];
+        pthread_mutex_destroy(&_ocupados[i]);
     }
 }
 
@@ -127,7 +135,7 @@ pair<string, unsigned int> ConcurrentHashMap::getMaximumInCell(unsigned int posi
 void *ConcurrentHashMap::threadFindMax(void *arg) {
     bool allTaken;
     int taken;
-    share_data_t *share_data = (share_data_t *)arg;
+    auto *share_data = (share_data_t *)arg;
     while(true){
         allTaken = true;
         for(unsigned int i=0; i<TABLE_SIZE; i++){
@@ -153,7 +161,8 @@ static ConcurrentHashMap countWordsInFile(string filePath) {
     static ConcurrentHashMap map;
     string line, word;
     unsigned long lastSpace, nextSpace;
-    ifstream file("/home/santiago/Documents/sistemas_operativos/tp1/TP1-pthreads/entregable/corpus");
+    //ifstream file("/home/santiago/Documents/sistemas_operativos/tp1/TP1-pthreads/entregable/corpus");
+    ifstream file(filePath);
     if(file.is_open()) {
         while (getline(file, line)) {
             lastSpace = 0;
@@ -167,13 +176,80 @@ static ConcurrentHashMap countWordsInFile(string filePath) {
             word = line.substr(lastSpace, nextSpace - lastSpace);
             map.addAndInc(word);
         }
+    }else{
+        cout << "Couldn't open file " << filePath << endl;
     }
     file.close();
     return map;
 }
 
+struct map_and_file_t {
+    ConcurrentHashMap *map{};
+    string filePath;
+};
+
+void *threadCountWordsInFile(void *arg) {
+    auto *map_and_file = (map_and_file_t*)arg;
+
+    string line, word;
+    unsigned long lastSpace, nextSpace;
+    //ifstream file("/home/santiago/Documents/sistemas_operativos/tp1/TP1-pthreads/entregable/corpus");
+    ifstream file(map_and_file->filePath);
+    if(file.is_open()) {
+        while (getline(file, line)) {
+            lastSpace = 0;
+            nextSpace = line.find(' ');
+            while (nextSpace != string::npos) {
+                word = line.substr(lastSpace, nextSpace - lastSpace);
+                map_and_file->map->addAndInc(word);
+                lastSpace = nextSpace;
+                nextSpace = line.find(' ');
+            }
+            word = line.substr(lastSpace, nextSpace - lastSpace);
+            map_and_file->map->addAndInc(word);
+        }
+    }else{
+        cout << "Couldn't open file " << map_and_file->filePath << endl;
+    }
+    return nullptr;
+}
+
 static ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths) {
-    // Completar
+    unsigned long cantFiles = filePaths.size();
+    static ConcurrentHashMap map;
+    int tid = 0;
+    pthread_attr_t attr;
+    pthread_t thread[cantFiles];
+    int rc;
+
+    map_and_file_t *map_and_file;
+    auto *pSharedMap = new ConcurrentHashMap;
+
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    string filePath;
+    for(auto const& file : filePaths){
+        map_and_file = new map_and_file_t;
+        map_and_file->map = pSharedMap;
+        map_and_file->filePath = file;
+        pthread_create(&thread[tid], &attr, &threadCountWordsInFile, map_and_file);
+        tid++;
+    }
+
+    pthread_attr_destroy(&attr);
+
+    for(tid=0; tid<cantFiles; tid++){
+        rc = pthread_join(thread[tid], nullptr);
+        if(rc){
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+    }
+
+    return map;
+
 }
 
 static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {

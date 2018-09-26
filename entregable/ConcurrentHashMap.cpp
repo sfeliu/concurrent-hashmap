@@ -293,9 +293,13 @@ void* count_file(void* args) {
                     targs->hm.addAndInc(word);
                 }
             }
+        } else {
+            cerr << "Problema abriendo archivo en count_file de countWordsArbitraryThreads" << endl;
+            continue;
         }
         file.close();
     }
+    return nullptr;
 }
 
 static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {
@@ -308,6 +312,12 @@ static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string
     for (unsigned int i = 0; i < n; i++) {
         pthread_create(&threads[i], nullptr, count_file, &targs);
     }
+
+    for (unsigned int i = 0; i < n; i++) {
+        pthread_join(threads[i], nullptr);
+    }
+
+    return hm;    
 }
 
 static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {

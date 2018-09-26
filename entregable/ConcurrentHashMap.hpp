@@ -18,7 +18,7 @@ class ConcurrentHashMap {
     public:
         ConcurrentHashMap();
 
-        ~ConcurrentHashMap();
+        //~ConcurrentHashMap();
 
         void addAndInc(string key);
 
@@ -28,6 +28,8 @@ class ConcurrentHashMap {
 
         pair<string, unsigned int> maximum(unsigned int n);
 
+        pair<string,unsigned int> getMaximumInCell(unsigned int position);
+
         friend Test;
 
     private:
@@ -35,9 +37,6 @@ class ConcurrentHashMap {
 
         pthread_mutex_t _ocupados[TABLE_SIZE];
 
-        pair<string,unsigned int> getMaximumInCell(unsigned int position);
-
-        void *threadFindMax(void *arg);
 
 
 };

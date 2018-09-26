@@ -324,7 +324,7 @@ void* count_file(void* args) {
 
 static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {
     atomic<int> file_queue_index(0);
-    vector<string> file_queue{filePaths.beguin(), filePaths.end()};
+    vector<string> file_queue{filePaths.begin(), filePaths.end()};
     ConcurrentHashMap hm;
     unsigned int tid;
 
@@ -353,7 +353,7 @@ struct thread_argument_many_maps {
 };
 
 void* count_file_many_maps(void* args) {
-    thread_argument_c *targs = (thread_argument_c *) args;
+    thread_argument_many_maps *targs = (thread_argument_many_maps *) args;
 
     while (true) {
         int index = targs->file_queue_index.fetch_add(1);
@@ -383,10 +383,10 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
     int n = filePaths.size();
     int rc;
     std::vector<ConcurrentHashMap> maps(n, ConcurrentHashMap());
-    std::thread readingThread[readingThreads];
+    pthread_t readingThread[readingThreads];
 
     atomic<int> file_queue_index(0);
-    vector<string> file_queue{filePaths.beguin(), filePaths.end()};
+    vector<string> file_queue{filePaths.begin(), filePaths.end()};
     unsigned int tid;
 
     pthread_attr_t attr;
@@ -394,8 +394,8 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for (tid = 0; tid < readingThreads; tid++) {
-        thread_argument_c targs = {file_queue_index, file_queue, maps};
-        pthread_create(&readingThread[tid], &attr, &count_file, &targs);
+        thread_argument_many_maps targs = {file_queue_index, file_queue, maps};
+        pthread_create(&readingThread[tid], &attr, &count_file_many_maps, &targs);
     }
 
     for (tid = 0; tid < readingThreads; tid++) {
@@ -405,7 +405,7 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
             exit(-1);
         }
     }
-    
+
     for(int i=1; i<n; i++){
         for(auto &key : maps[i].keys()) {
             maps[0].addAndInc(key);

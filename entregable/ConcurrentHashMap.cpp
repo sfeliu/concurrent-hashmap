@@ -346,8 +346,75 @@ static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string
     return hm;    
 }
 
+struct thread_argument_many_maps {
+    atomic<int> &file_queue_index;
+    vector<string> &file_queue;
+    vector<ConcurrentHashMap> &hm;
+};
+
+void* count_file_many_maps(void* args) {
+    thread_argument_c *targs = (thread_argument_c *) args;
+
+    while (true) {
+        int index = targs->file_queue_index.fetch_add(1);
+        if (index >= targs->file_queue.size())
+            break;
+
+        ifstream file(targs->file_queue[index]);
+        string line;
+        if (file.is_open()) {
+            while (getline(file, line)) {
+                vector<string> words = split_line(line, ' ');
+                for (auto &word: words) {
+                    targs->hm[index].addAndInc(word);
+                }
+            }
+        } else {
+            cerr << "Problema abriendo archivo en count_file de countWordsArbitraryThreads" << endl;
+            continue;
+        }
+        file.close();
+    }
+    return nullptr;
+}
+
 static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
     // Completar
+    int n = filePaths.size();
+    int rc;
+    std::vector<ConcurrentHashMap> maps(n, ConcurrentHashMap());
+    std::thread readingThread[readingThreads];
+
+    atomic<int> file_queue_index(0);
+    vector<string> file_queue{filePaths.beguin(), filePaths.end()};
+    unsigned int tid;
+
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    for (tid = 0; tid < readingThreads; tid++) {
+        thread_argument_c targs = {file_queue_index, file_queue, maps};
+        pthread_create(&readingThread[tid], &attr, &count_file, &targs);
+    }
+
+    for (tid = 0; tid < readingThreads; tid++) {
+        rc = pthread_join(readingThread[tid], nullptr);
+        if(rc){
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+    }
+    
+    for(int i=1; i<n; i++){
+        for(auto &key : maps[i].keys()) {
+            maps[0].addAndInc(key);
+        }
+    }
+
+    pair<string, unsigned int> maxPair = maps[0].maximum(maxingThreads);
+
+    return maxPair;
 }
 
 static pair<string, unsigned int>  maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {

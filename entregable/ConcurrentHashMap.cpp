@@ -324,17 +324,23 @@ void* count_file(void* args) {
 
 static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {
     atomic<int> file_queue_index(0);
-    vector<string> file_queue{begin(filePaths), end(filePaths)};
+    vector<string> file_queue{filePaths.beguin(), filePaths.end()};
     ConcurrentHashMap hm;
+    unsigned int tid;
 
     thread_argument_c targs = {file_queue_index, file_queue, hm};
     pthread_t threads[n];
-    for (unsigned int i = 0; i < n; i++) {
-        pthread_create(&threads[i], nullptr, count_file, &targs);
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    for (tid = 0; tid < n; tid++) {
+        pthread_create(&threads[tid], &attr, &count_file, &targs);
     }
 
-    for (unsigned int i = 0; i < n; i++) {
-        pthread_join(threads[i], nullptr);
+    for (tid = 0; tid < n; tid++) {
+        pthread_join(threads[tid], nullptr);
     }
 
     return hm;    

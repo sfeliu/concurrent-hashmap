@@ -282,6 +282,13 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
 
 static pair<string, unsigned int>  maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
     // Completar
+    static ConcurrentHashMap map;
+    map = countWordsArbitraryThreads(readingThreads, filePaths);
+
+    pair<string, unsigned int> maxPair = make_pair("", 0);
+    maxPair = map.maximum(maxingThreads);
+
+    return maxPair;
 }
 
 #endif

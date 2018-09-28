@@ -88,6 +88,7 @@ unsigned int ConcurrentHashMap::value(string key) {
         if(it.Siguiente().first == key){
             value = it.Siguiente().second;
         }
+        it.Avanzar();
     }
     return value;
 }
@@ -382,7 +383,10 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
     // Completar
     int n = filePaths.size();
     int rc;
-    std::vector<ConcurrentHashMap> maps(n, ConcurrentHashMap());
+    std::vector<ConcurrentHashMap> maps;
+    for(int i=0; i<n; i++){
+        maps.push_back(*new ConcurrentHashMap);
+    }
     pthread_t readingThread[readingThreads];
 
     atomic<int> file_queue_index(0);
@@ -408,7 +412,9 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
 
     for(int i=1; i<n; i++){
         for(auto &key : maps[i].keys()) {
-            maps[0].addAndInc(key);
+            for(int time=0; time<maps[i].value(key); time++){
+                maps[0].addAndInc(key);
+            }
         }
     }
 

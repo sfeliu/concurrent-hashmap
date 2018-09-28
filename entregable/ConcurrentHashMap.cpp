@@ -177,26 +177,28 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
     return maxPair;
 }
 
+vector<string> split_line(string &line, char delim) {
+    stringstream line_stream(line);
+    vector<string> words;
+    string word;
+    while(getline(line_stream, word, delim)) {
+        words.push_back(word);
+    }
+    return words;
+}
+
 
 static ConcurrentHashMap countWordsInFile(string filePath) {
     // Completar
     static ConcurrentHashMap map;
-    string line, word;
-    unsigned long lastSpace, nextSpace;
-    //ifstream file("/home/santiago/Documents/sistemas_operativos/tp1/TP1-pthreads/entregable/corpus");
+    string line;
     ifstream file(filePath);
     if(file.is_open()) {
         while (getline(file, line)) {
-            lastSpace = 0;
-            nextSpace = line.find(' ');
-            while (nextSpace != string::npos) {
-                word = line.substr(lastSpace, nextSpace - lastSpace);
+            vector<string> words = split_line(line, ' ');
+            for (auto &word: words) {
                 map.addAndInc(word);
-                lastSpace = nextSpace;
-                nextSpace = line.find(' ');
             }
-            word = line.substr(lastSpace, nextSpace - lastSpace);
-            map.addAndInc(word);
         }
     }else{
         cout << "Couldn't open file " << filePath << endl;
@@ -215,20 +217,13 @@ void *threadCountWordsInFile(void *arg) {
 
     string line, word;
     unsigned long lastSpace, nextSpace;
-    //ifstream file("/home/santiago/Documents/sistemas_operativos/tp1/TP1-pthreads/entregable/corpus");
     ifstream file(map_and_file->filePath);
     if(file.is_open()) {
         while (getline(file, line)) {
-            lastSpace = 0;
-            nextSpace = line.find(' ');
-            while (nextSpace != string::npos) {
-                word = line.substr(lastSpace, nextSpace - lastSpace);
+            vector<string> words = split_line(line, ' ');
+            for (auto &word: words) {
                 map_and_file->map->addAndInc(word);
-                lastSpace = nextSpace;
-                nextSpace = line.find(' ');
             }
-            word = line.substr(lastSpace, nextSpace - lastSpace);
-            map_and_file->map->addAndInc(word);
         }
     }else{
         cout << "Couldn't open file " << map_and_file->filePath << endl;
@@ -287,15 +282,6 @@ struct thread_argument_c {
 //              const pthread_attr_t *restrict attr,
 //              void *(*start_routine)(void*), void *restrict arg);
 
-vector<string> split_line(string &line, char delim) {
-    stringstream line_stream(line);
-    vector<string> words;
-    string word;
-    while(getline(line_stream, word, delim)) {
-        words.push_back(word);
-    }
-    return words;
-}
 
 void* count_file(void* args) {
     thread_argument_c *targs = (thread_argument_c *) args;

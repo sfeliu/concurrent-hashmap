@@ -18,7 +18,7 @@ class ConcurrentHashMap {
     public:
         ConcurrentHashMap();
 
-        //~ConcurrentHashMap();
+        ~ConcurrentHashMap();
 
         void addAndInc(string key);
 

@@ -38,12 +38,12 @@ ConcurrentHashMap::ConcurrentHashMap() {
 }
 
 // No estaria borrando completamente, ni funcionando.
-//ConcurrentHashMap::~ConcurrentHashMap() {
-//    for(int i=0; i<TABLE_SIZE; i++){
-//        delete tabla[i];
-//        pthread_mutex_destroy(&_ocupados[i]);
-//    }
-//}
+ConcurrentHashMap::~ConcurrentHashMap() {
+    for(int i=0; i<TABLE_SIZE; i++){
+        delete[] tabla[i];
+        pthread_mutex_destroy(&_ocupados[i]);
+    }
+}
 
 void ConcurrentHashMap::addAndInc(string key) {
     unsigned int position = getHashKey(key);

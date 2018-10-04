@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include "ConcurrentHashMap.cpp"
+#include "ConcurrentHashMap.hpp"
 
 #define MILLION 1000000L
 

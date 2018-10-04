@@ -8,8 +8,7 @@ using namespace std;
 
 int Test::run(int argc, char **argv) {
     ConcurrentHashMap h;
-    string corpus = "/home/federico/Desktop/sf_Sistemas/sotp1/entregable/corpus";
-    list <string> l = {corpus, corpus, corpus, corpus, corpus};
+    list <string> l = {"corpus-0", "corpus-1", "corpus-2", "corpus-3", "corpus-4"};
     int i;
 
     if (argc != 2) {

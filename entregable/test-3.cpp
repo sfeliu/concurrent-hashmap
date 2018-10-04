@@ -7,9 +7,8 @@
 using namespace std;
 
 int Test::run(int argc, char **argv) {
-    pair<string, unsigned int> p;
-    string corpus = "/home/federico/Desktop/sf_Sistemas/sotp1/entregable/corpus";
-    list <string> l = {corpus, corpus, corpus, corpus, corpus};
+    pair<string, unsigned int> p, q;
+    list <string> l = {"corpus-0", "corpus-1", "corpus-2", "corpus-3", "corpus-4"};
 
     if (argc != 3) {
         cerr << "uso: " << argv[0] << " #tarchivos #tmaximum" << endl;
@@ -18,6 +17,9 @@ int Test::run(int argc, char **argv) {
 
     p = maximumOne(atoi(argv[1]), atoi(argv[2]), l);
     cout << p.first << " " << p.second << endl;
+
+   // q = maximumTwo(atoi(argv[1]), atoi(argv[2]), l);
+   // cout << q.first << " " << q.second << endl;
 
     return 0;
 }

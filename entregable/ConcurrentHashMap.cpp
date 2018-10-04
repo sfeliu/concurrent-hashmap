@@ -188,9 +188,9 @@ vector<string> split_line(string &line, char delim) {
 }
 
 
-static ConcurrentHashMap countWordsInFile(string filePath) {
+ConcurrentHashMap countWordsInFile(string filePath) {
     // Completar
-    static ConcurrentHashMap map;
+    ConcurrentHashMap map;
     string line;
     ifstream file(filePath);
     if(file.is_open()) {
@@ -233,7 +233,7 @@ void *threadCountWordsInFile(void *arg) {
     return nullptr;
 }
 
-static ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths) {
+ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths) {
     unsigned long cantFiles = filePaths.size();
     int tid = 0;
     pthread_attr_t attr;
@@ -309,7 +309,7 @@ void* count_file(void* args) {
     return nullptr;
 }
 
-static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {
+ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths) {
     atomic<int> file_queue_index(0);
     vector<string> file_queue{filePaths.begin(), filePaths.end()};
     ConcurrentHashMap hm;
@@ -365,7 +365,7 @@ void* count_file_many_maps(void* args) {
     return nullptr;
 }
 
-static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
+pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
     // Completar
     int n = filePaths.size();
     int rc;
@@ -409,9 +409,9 @@ static pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsig
     return maxPair;
 }
 
-static pair<string, unsigned int>  maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
+pair<string, unsigned int>  maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
     // Completar
-    static ConcurrentHashMap map;
+    ConcurrentHashMap map;
     map = countWordsArbitraryThreads(readingThreads, filePaths);
 
     pair<string, unsigned int> maxPair = make_pair("", 0);

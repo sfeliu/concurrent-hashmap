@@ -41,15 +41,15 @@ class ConcurrentHashMap {
 
 };
 
-static ConcurrentHashMap countWordsInFile(string filePath);
+ConcurrentHashMap countWordsInFile(string filePath);
 
-static ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths);
+ConcurrentHashMap countWordsOneThreadPerFile(list <string> filePaths);
 
-static ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths);
+ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> filePaths);
 
-static pair<string, unsigned int> maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths);
+pair<string, unsigned int> maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths);
 
-static pair<string, unsigned int> maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths);
+pair<string, unsigned int> maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths);
 
 
 #endif

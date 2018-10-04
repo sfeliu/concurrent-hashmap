@@ -3,18 +3,21 @@
 .SUFFIXES: .o .cpp
 
 CXX = g++
-CXXFLAGS = -std=c++11
+CXXFLAGS = -g -std=c++11 -pthread
 LDLIBS = -lpthread
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-BIN = test-1 test-2 test-3
+BIN = test-1 test-2 test-3 tiempos
 OBJ = ConcurrentHashMap.o
 
 all: $(BIN)
 
 $(BIN): ListaAtomica.hpp
+
+tiempos: $(OBJ) tiempos.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ tiempos.cpp $(OBJ) -lrt $(LDLIBS)
 
 test-1: $(OBJ) test-1.cpp test.hpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test.hpp test-1.cpp $(LDLIBS)

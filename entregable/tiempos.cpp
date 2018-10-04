@@ -1,7 +1,8 @@
 #include <time.h>
 #include <fstream>
 #include <iostream>
-#include "ConcurrentHashMap.hpp"
+#include <vector>
+#include "ConcurrentHashMap.cpp"
 
 #define MILLION 1000000L
 
@@ -22,7 +23,7 @@ int main(int argc, char const *argv[])
         for (int k = 1; k <= 50; ++k)
         {
             clock_gettime(clk_id, &start);
-            ConcurrentHashMap::maximumOne(1, i, l);
+            maximumOne(1, i, l);
             clock_gettime(clk_id, &stop);
 
             double diff1 = ( stop.tv_sec - start.tv_sec ) * MILLION +
@@ -34,7 +35,7 @@ int main(int argc, char const *argv[])
             }
 
             clock_gettime(clk_id, &start);
-            ConcurrentHashMap::maximumTwo(1, i, l);
+            maximumTwo(1, i, l);
             clock_gettime(clk_id, &stop);
 
             double diff2 = ( stop.tv_sec - start.tv_sec ) * MILLION +

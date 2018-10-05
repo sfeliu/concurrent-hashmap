@@ -38,13 +38,13 @@ ConcurrentHashMap::ConcurrentHashMap() {
 }
 
 // No estaria borrando completamente, ni funcionando.
-ConcurrentHashMap::~ConcurrentHashMap() {
+/*ConcurrentHashMap::~ConcurrentHashMap() {
     for(int i=0; i<TABLE_SIZE; i++){
         delete[] tabla[i];
         pthread_mutex_destroy(&_ocupados[i]);
     }
 }
-
+*/
 void ConcurrentHashMap::addAndInc(string key) {
     unsigned int position = getHashKey(key);
     // Bloqueo la posicion de la tabla de hash para poder trabajar concurrentemente.
@@ -370,9 +370,13 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
     int n = filePaths.size();
     int rc;
     std::vector<ConcurrentHashMap> maps;
+
     for(int i=0; i<n; i++){
-        maps.push_back(*new ConcurrentHashMap);
+        auto mapa = *new ConcurrentHashMap;
+        maps.push_back(mapa);
+
     }
+
     pthread_t readingThread[readingThreads];
 
     atomic<int> file_queue_index(0);

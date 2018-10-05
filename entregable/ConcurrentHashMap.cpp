@@ -17,7 +17,7 @@ using namespace std;
 
 struct share_data_t {
     ConcurrentHashMap *map;
-    pthread_mutex_t *ocupados;
+    pthread_mutex_t *procesando;
     bool *cellsTaken;
     pair<string, unsigned int> *maxPerCell;
 };
@@ -113,11 +113,11 @@ void *threadFindMax(void *arg) {
         allTaken = true;
         for(unsigned int i=0; i<TABLE_SIZE; i++){
             if(!*(share_data->cellsTaken + i)){
-                taken = pthread_mutex_trylock(&*(share_data->ocupados + i));
+                taken = pthread_mutex_trylock(&*(share_data->procesando + i));
                 if(taken){
                     *(share_data->cellsTaken + i) = true;
                     *(share_data->maxPerCell + i) = share_data->map->getMaximumInCell(i);
-                    pthread_mutex_unlock(&(*(share_data->ocupados + i)));
+                    pthread_mutex_unlock(&(*(share_data->procesando + i)));
                 }else{
                     allTaken = false;
                 }
@@ -138,9 +138,20 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
     pthread_t thread[n];
     int rc;
 
+
+    for (auto &_ocupado : _ocupados) {
+        pthread_mutex_lock(&_ocupado);
+    }
+
+    pthread_mutex_t _procesando[TABLE_SIZE];
+
+    for (auto &i : _procesando) {
+        pthread_mutex_init(&i, nullptr);
+    }
+
     auto *share_data = new share_data_t;
     share_data->map = this;
-    share_data->ocupados = _ocupados;
+    share_data->procesando = _procesando;
     bool *pShared_cellsTaken;
     bool shared_cellsTaken[TABLE_SIZE] = {false};
     pShared_cellsTaken = shared_cellsTaken;
@@ -172,7 +183,18 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
             maxPair = share_data->maxPerCell[i];
         }
     }
+
+
+    for (auto &i : _procesando) {
+        pthread_mutex_destroy(&i);
+    }
+    
     free(share_data);
+
+
+    for (auto &_ocupado : _ocupados) {
+        pthread_mutex_unlock(&_ocupado);
+    }
 
     return maxPair;
 }

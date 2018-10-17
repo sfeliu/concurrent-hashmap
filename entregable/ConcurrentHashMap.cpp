@@ -352,6 +352,8 @@ ConcurrentHashMap countWordsArbitraryThreads(unsigned int n, list <string> fileP
         pthread_join(threads[tid], nullptr);
     }
 
+    pthread_attr_destroy(&attr);
+
     return hm;    
 }
 
@@ -453,6 +455,8 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
             exit(-1);
         }
     }
+
+    pthread_attr_destroy(&attr);
 
     pair<string, unsigned int> maxPair = maps[0].maximum(maxingThreads);
 

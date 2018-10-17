@@ -312,7 +312,7 @@ void* count_file(void* args) {
         int index = targs->file_queue_index.fetch_add(1);
         if (index >= targs->file_queue.size())
             break;
-            
+
         ifstream file(targs->file_queue[index]);
         string line;
         if (file.is_open()) {
@@ -381,7 +381,7 @@ void* count_file_many_maps(void* args) {
                 }
             }
         } else {
-            cerr << "Problema abriendo archivo en count_file de countWordsArbitraryThreads" << endl;
+            cerr << "Problema abriendo archivo en count_file_many_maps de maximumOne" << endl;
             continue;
         }
         file.close();
@@ -394,9 +394,9 @@ void* join_many_maps(void* args) {
 
     while (true) {
         int index = targs->file_queue_index.fetch_add(1);
-        if (index >= targs->file_queue.size())
+        if (index >= targs->hm.size())
             break;
-
+        
         for(auto &key : targs->hm[index].keys()) {
             for(int time=0; time<targs->hm[index].value(key); time++){
                 targs->hm[0].addAndInc(key);
@@ -419,6 +419,7 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
     }
 
     pthread_t readingThread[readingThreads];
+    pthread_t maxingThread[maxingThreads];
 
     atomic<int> file_queue_index(0);
     vector<string> file_queue{filePaths.begin(), filePaths.end()};
@@ -428,8 +429,9 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
+    thread_argument_many_maps targs = {file_queue_index, file_queue, maps};
+
     for (tid = 0; tid < readingThreads; tid++) {
-        thread_argument_many_maps targs = {file_queue_index, file_queue, maps};
         pthread_create(&readingThread[tid], &attr, &count_file_many_maps, &targs);
     }
 
@@ -441,10 +443,8 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
         }
     }
 
-    pthread_t maxingThread[maxingThreads];
-
+    file_queue_index = 1;
     for (tid = 0; tid < maxingThreads; tid++) {
-        thread_argument_many_maps targs = {file_queue_index, file_queue, maps};
         pthread_create(&maxingThread[tid], &attr, &join_many_maps, &targs);
     }
 

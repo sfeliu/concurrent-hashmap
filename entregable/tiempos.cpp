@@ -18,7 +18,7 @@ int main(int argc, char const *argv[]) {
         vector<double> resultados[2];
         for (int k = 1; k <= 50; ++k) {
             clock_gettime(clk_id, &start);
-            maximumOne(1, i, l);
+            maximumOne(i, 1, l);
             clock_gettime(clk_id, &stop);
 
             double diff1 = (stop.tv_sec - start.tv_sec) * MILLION +
@@ -29,7 +29,7 @@ int main(int argc, char const *argv[]) {
             }
 
             clock_gettime(clk_id, &start);
-            maximumTwo(1, i, l);
+            maximumTwo(i, 1, l);
             clock_gettime(clk_id, &stop);
 
             double diff2 = (stop.tv_sec - start.tv_sec) * MILLION +
@@ -59,12 +59,12 @@ int main(int argc, char const *argv[]) {
 
     // Guardo los resultados en un archivo de texto
     ofstream outfile;
-    outfile.open("tiempos.csv", ios::out);
+    outfile.open("tiempos-varia-readingThreads-maximumOne.csv", ios::out);
 
     // Escribo todos los resultados en el archivo
     int asd = 1;
     for (uint i = 0; i < v[0].size(); ++i) {
-        outfile << v[1][i] << ',' << endl;
+        outfile << v[0][i] << ',' << endl;
         asd += 1;
     }
 

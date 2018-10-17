@@ -18,7 +18,7 @@ int main(int argc, char const *argv[]) {
         vector<double> resultados[2];
         for (int k = 1; k <= 50; ++k) {
             clock_gettime(clk_id, &start);
-            maximumOne(i, 1, l);
+            maximumOne(1, i, l);
             clock_gettime(clk_id, &stop);
 
             double diff1 = (stop.tv_sec - start.tv_sec) * MILLION +
@@ -29,7 +29,7 @@ int main(int argc, char const *argv[]) {
             }
 
             clock_gettime(clk_id, &start);
-            maximumTwo(i, 1, l);
+            maximumTwo(1, i, l);
             clock_gettime(clk_id, &stop);
 
             double diff2 = (stop.tv_sec - start.tv_sec) * MILLION +

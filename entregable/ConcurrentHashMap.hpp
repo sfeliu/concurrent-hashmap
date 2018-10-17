@@ -28,7 +28,7 @@ class ConcurrentHashMap {
 
         pair<string, unsigned int> maximum(unsigned int n);
 
-        pair<string,unsigned int> getMaximumInCell(unsigned int position);
+        pair<string,unsigned int> getMaximumInRow(int position);
 
         friend Test;
 

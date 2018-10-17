@@ -17,9 +17,8 @@ using namespace std;
 
 struct share_data_t {
     ConcurrentHashMap *map;
-    pthread_mutex_t *procesando;
-    bool *cellsTaken;
-    pair<string, unsigned int> *maxPerCell;
+    atomic<int> &row_index;
+    pair<string, unsigned int> *maxPerRow;
 };
 
 
@@ -55,6 +54,8 @@ void ConcurrentHashMap::addAndInc(string key) {
         if(it.Siguiente().first == key){
             found = true;
             it.Siguiente().second+=1;
+            // La desbloqueo para que otro trabaje con ella.
+            pthread_mutex_unlock(&_ocupados[position]);
             break;
         }else{
             it.Avanzar();
@@ -62,9 +63,9 @@ void ConcurrentHashMap::addAndInc(string key) {
     }
     if(!found){
         tabla[position]->push_front(make_pair(key, 1));
+        // La desbloqueo para que otro trabaje con ella.
+        pthread_mutex_unlock(&_ocupados[position]);
     }
-    // La desbloqueo para que otro trabaje con ella.
-    pthread_mutex_unlock(&_ocupados[position]);
 }
 
 list<string> ConcurrentHashMap::keys() {
@@ -93,7 +94,7 @@ unsigned int ConcurrentHashMap::value(string key) {
     return value;
 }
 
-pair<string, unsigned int> ConcurrentHashMap::getMaximumInCell(unsigned int position) {
+pair<string, unsigned int> ConcurrentHashMap::getMaximumInRow(int position) {
     pair<string, unsigned int> max_pair = make_pair("",0);
     Lista<pair<string, unsigned int>>::Iterador it = tabla[position]->CrearIt();
     while(it.HaySiguiente()){
@@ -106,26 +107,12 @@ pair<string, unsigned int> ConcurrentHashMap::getMaximumInCell(unsigned int posi
 }
 
 void *threadFindMax(void *arg) {
-    bool allTaken;
-    int taken;
     auto *share_data = (share_data_t *)arg;
     while(true){
-        allTaken = true;
-        for(unsigned int i=0; i<TABLE_SIZE; i++){
-            if(!*(share_data->cellsTaken + i)){
-                taken = pthread_mutex_trylock(&*(share_data->procesando + i));
-                if(taken){
-                    *(share_data->cellsTaken + i) = true;
-                    *(share_data->maxPerCell + i) = share_data->map->getMaximumInCell(i);
-                    pthread_mutex_unlock(&(*(share_data->procesando + i)));
-                }else{
-                    allTaken = false;
-                }
-            }
-        }
-        if(allTaken){
+        int index = share_data->row_index.fetch_add(1);
+        if (index >= TABLE_SIZE)
             break;
-        }
+        *(share_data->maxPerRow + index) = share_data->map->getMaximumInRow(index);
     }
     return nullptr;
 }
@@ -149,23 +136,17 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
         pthread_mutex_init(&i, nullptr);
     }
 
-    auto *share_data = new share_data_t;
-    share_data->map = this;
-    share_data->procesando = _procesando;
-    bool *pShared_cellsTaken;
-    bool shared_cellsTaken[TABLE_SIZE] = {false};
-    pShared_cellsTaken = shared_cellsTaken;
-    share_data->cellsTaken = pShared_cellsTaken;
     pair<string, unsigned int> *pShared_maxPerCell;
     pair<string, unsigned int> shared_maxPerCell[TABLE_SIZE];
     pShared_maxPerCell = shared_maxPerCell;
-    share_data->maxPerCell = pShared_maxPerCell;
+    atomic<int> file_queue_index(0);
+    share_data_t share_data = {this, file_queue_index, pShared_maxPerCell};
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     for(tid=0; tid<n; tid++){
-        pthread_create(&thread[tid], &attr, &threadFindMax, &(*share_data));
+        pthread_create(&thread[tid], &attr, &threadFindMax, &share_data);
     }
 
     pthread_attr_destroy(&attr);
@@ -179,8 +160,8 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
     }
 
     for(int i=0; i<TABLE_SIZE; i++){
-        if(maxPair.second < (*(share_data->maxPerCell + i)).second){
-            maxPair = share_data->maxPerCell[i];
+        if(maxPair.second < (*(share_data.maxPerRow + i)).second){
+            maxPair = share_data.maxPerRow[i];
         }
     }
 
@@ -188,9 +169,6 @@ pair<string, unsigned int> ConcurrentHashMap::maximum(unsigned int n) {
     for (auto &i : _procesando) {
         pthread_mutex_destroy(&i);
     }
-    
-    free(share_data);
-
 
     for (auto &_ocupado : _ocupados) {
         pthread_mutex_unlock(&_ocupado);
@@ -211,7 +189,6 @@ vector<string> split_line(string &line, char delim) {
 
 
 ConcurrentHashMap countWordsInFile(string filePath) {
-    // Completar
     ConcurrentHashMap map;
     string line;
     ifstream file(filePath);
@@ -250,7 +227,6 @@ void *threadCountWordsInFile(void *arg) {
     }else{
         cout << "Couldn't open file " << map_and_file->filePath << endl;
     }
-    // ??? funciona ???
     free(map_and_file);
     return nullptr;
 }
@@ -407,7 +383,6 @@ void* join_many_maps(void* args) {
 }
 
 pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
-    // Completar
     int n = filePaths.size();
     int rc;
     std::vector<ConcurrentHashMap> maps;
@@ -464,7 +439,6 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
 }
 
 pair<string, unsigned int>  maximumTwo(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
-    // Completar
     ConcurrentHashMap map;
     map = countWordsArbitraryThreads(readingThreads, filePaths);
 

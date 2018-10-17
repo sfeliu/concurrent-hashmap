@@ -387,6 +387,23 @@ void* count_file_many_maps(void* args) {
     return nullptr;
 }
 
+void* join_many_maps(void* args) {
+    thread_argument_many_maps *targs = (thread_argument_many_maps *) args;
+
+    while (true) {
+        int index = targs->file_queue_index.fetch_add(1);
+        if (index >= targs->file_queue.size())
+            break;
+
+        for(auto &key : targs->hm[index].keys()) {
+            for(int time=0; time<targs->hm[index].value(key); time++){
+                targs->hm[0].addAndInc(key);
+            }
+        }
+    }
+    return nullptr;
+}
+
 pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int maxingThreads, list <string> filePaths) {
     // Completar
     int n = filePaths.size();
@@ -422,11 +439,18 @@ pair<string, unsigned int>  maximumOne(unsigned int readingThreads, unsigned int
         }
     }
 
-    for(int i=1; i<n; i++){
-        for(auto &key : maps[i].keys()) {
-            for(int time=0; time<maps[i].value(key); time++){
-                maps[0].addAndInc(key);
-            }
+    pthread_t maxingThread[maxingThreads];
+
+    for (tid = 0; tid < maxingThreads; tid++) {
+        thread_argument_many_maps targs = {file_queue_index, file_queue, maps};
+        pthread_create(&maxingThread[tid], &attr, &join_many_maps, &targs);
+    }
+
+    for (tid = 0; tid < maxingThreads; tid++) {
+        rc = pthread_join(maxingThread[tid], nullptr);
+        if(rc){
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
         }
     }
 

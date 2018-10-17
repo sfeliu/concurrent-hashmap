@@ -396,7 +396,7 @@ void* join_many_maps(void* args) {
         int index = targs->file_queue_index.fetch_add(1);
         if (index >= targs->hm.size())
             break;
-        
+
         for(auto &key : targs->hm[index].keys()) {
             for(int time=0; time<targs->hm[index].value(key); time++){
                 targs->hm[0].addAndInc(key);
